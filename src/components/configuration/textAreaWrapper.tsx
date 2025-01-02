@@ -1,32 +1,31 @@
 import React, { useEffect, useState } from 'react'
-
-import { Input, Col } from 'antd'
-
 import { useDebouncedCallback } from 'use-debounce'
 
-import ConfigType from '../../../common/types/configType'
-
-const { TextArea } = Input
+import type ConfigType from '@/common/types/configType'
 
 type TextAreaProps = {
-  defaultValue: string
+  title?: string
+  alt?: string
   value: string
+  placeholder?: string
   keyName: keyof ConfigType
   handleChange: (value: any, key: keyof ConfigType) => void
   disabled?: boolean
 }
 
 const TextAreaWrapper = ({
-  defaultValue,
+  title,
+  alt,
   keyName,
   value,
+  placeholder,
   handleChange,
-  disabled
+  disabled,
 }: TextAreaProps) => {
   const [internalValue, setInternalValue] = useState(value)
 
   const debounced = useDebouncedCallback((value) => {
-    handleChange({ value: value, editable: true, state: true }, keyName)
+    handleChange({ value, editable: true, state: true }, keyName)
   }, 500)
 
   const processChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -39,13 +38,34 @@ const TextAreaWrapper = ({
   }, [value])
 
   return (
-    <Col span={10}>
-      <TextArea
-        defaultValue={defaultValue}
+    <div className="form-control">
+      {title && (
+        <label className="label" htmlFor={keyName}>
+          <span className="label-text font-semibold" id={`${keyName}-title`}>
+            {title}
+          </span>
+          {alt && (
+            <span
+              className="label-text-alt font-semibold"
+              id={`${keyName}-alt`}
+            >
+              {alt}
+            </span>
+          )}
+        </label>
+      )}
+      <textarea
+        id={keyName}
+        name={keyName}
+        className="textarea textarea-bordered h-20 font-semibold"
         value={internalValue}
         onChange={processChange}
-        disabled={disabled}></TextArea>
-    </Col>
+        disabled={disabled}
+        placeholder={placeholder}
+        aria-disabled={disabled}
+        aria-labelledby={`${keyName}-title ${alt ? `${keyName}-alt` : ''}`}
+      />
+    </div>
   )
 }
 export default TextAreaWrapper

@@ -1,39 +1,47 @@
-import React, { useContext, useEffect } from 'react'
-import { useRouter } from 'next/router'
-import { Col, Form, Row, Space } from 'antd'
-import ConfigContext from '../../contexts/ConfigContext'
+import { JSX, useContext, useEffect } from 'react'
 
-import ConfigType, {
-  Theme,
-  Pattern,
+import { getOptionalConfig } from '@/common/configHelper'
+import { RepoQueryResponse } from '@/common/github/repoQuery'
+import type ConfigType from '@/common/types/configType'
+import {
   Font,
-  RequiredConfigsKeys
-} from '../../../common/types/configType'
+  Pattern,
+  RequiredConfigsKeys,
+  Theme,
+} from '@/common/types/configType'
+import CheckBoxWrapper from '@/src/components/configuration/checkBoxWrapper'
+import { objectifySearchParamsString } from '@/src/components/configuration/configHelpers'
+import LogoInput from '@/src/components/configuration/logoInput'
+import SelectWrapper from '@/src/components/configuration/selectWrapper'
+import TextAreaWrapper from '@/src/components/configuration/textAreaWrapper'
+import ConfigContext from '@/src/contexts/ConfigContext'
+import {
+  type RouteResources,
+  useRouteResources,
+} from '@/src/hooks/useRouteResources'
 
-import { repoQueryResponse } from '../../../common/relay/__generated__/repoQuery.graphql'
-import { getOptionalConfig } from '../../../common/configHelper'
-
-import SelectWrapper from './selectWrapper'
-import CheckBoxWrapper from './checkBoxWrapper'
-import InputWrapper from './inputWrapper'
-import TextAreaWrapper from './textAreaWrapper'
-
-type ConfigProp = {
-  repository: repoQueryResponse['repository']
+interface ConfigProps {
+  repository: RepoQueryResponse['repository']
 }
 
-const Config = ({ repository }: ConfigProp) => {
-  const router = useRouter()
+interface ConfigChange {
+  value: any
+  key: keyof ConfigType
+}
 
+export default function Config({
+  repository,
+}: ConfigProps): JSX.Element | null {
   const { config, setConfig } = useContext(ConfigContext)
+  const { clientRouter, currentPath, searchParamsString }: RouteResources =
+    useRouteResources()
 
-  const handleChanges = (changes: { value: any; key: keyof ConfigType }[]) => {
+  function handleArrayOfConfigChanges(changeArray: ConfigChange[]): void {
     let newConfig: ConfigType = { ...config }
-    const urlParams = router.query
-    // Remove extraneous params from route
-    delete urlParams._owner
-    delete urlParams._name
-    changes.forEach(({ value, key }) => {
+    const urlParams: Record<string, string> =
+      objectifySearchParamsString(searchParamsString)
+
+    changeArray.forEach(({ value, key }) => {
       const currentValue = newConfig[key] ? newConfig[key] : {}
       if (value.required === true) {
         newConfig = { ...newConfig, [key]: value.val }
@@ -43,7 +51,7 @@ const Config = ({ repository }: ConfigProp) => {
 
       if (value && value.state === true && value.editable) {
         urlParams[key] = '1'
-        urlParams[`${key}Editable`] = value.value
+        urlParams[`custom_${key}`] = value.value
       } else if (value && value.state === true) {
         urlParams[key] = '1'
       } else if (value && value.required === true) {
@@ -54,200 +62,180 @@ const Config = ({ repository }: ConfigProp) => {
 
       if (!urlParams[key] || urlParams[key] === '0') {
         delete urlParams[key]
+        if (`custom_${key}` in urlParams) {
+          delete urlParams[`custom_${key}`]
+        }
       }
     })
 
-    router.push(
-      `${window.location.pathname}?${Object.entries(urlParams)
+    clientRouter.push(
+      `${currentPath}?${Object.entries(urlParams)
         .sort()
         .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
         .join('&')}`,
-      undefined,
-      { shallow: true }
+      { scroll: false }
     )
   }
 
-  const handleChange = (value: any, key: keyof ConfigType) => {
-    handleChanges([{ value, key }])
+  function handleConfigChange(value: any, key: keyof ConfigType): void {
+    handleArrayOfConfigChanges([{ value, key }])
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only update on searchParamsString change.
   useEffect(() => {
-    const handleRouteChange = (asPath: string) => {
-      if (repository) {
-        const newConfig = getOptionalConfig(repository)
-        if (newConfig) {
-          const params = new URLSearchParams(asPath.split('?')[1])
+    function handleRouteChange(searchParamsString: string): void {
+      if (!repository) return
 
-          Array.from(params.keys()).forEach((stringKey) => {
-            const key = stringKey as keyof ConfigType
-            if (key in newConfig) {
-              const query = params.get(key)
-              const currentConfig = newConfig[key as keyof typeof newConfig]
-              const newChange = {
-                state: query === '1'
-              }
-              if (currentConfig?.editable) {
-                const editableValue = params.get(`${key}Editable`)
-                if (editableValue != null) {
-                  Object.assign(newChange, {
-                    value: editableValue
-                  })
-                }
-              }
+      const newConfig = getOptionalConfig(repository)
 
-              Object.assign(newConfig[key as keyof typeof newConfig], newChange)
-            } else if (key in RequiredConfigsKeys) {
-              const query = params.get(key)
-              if (query != null) {
-                const newChange = {
-                  [key]: query
-                }
+      if (!newConfig) return
 
-                Object.assign(newConfig, newChange)
-              }
+      const params = new URLSearchParams(searchParamsString)
+      Array.from(params.keys()).forEach((stringKey) => {
+        const key = stringKey as keyof ConfigType
+        if (key in newConfig) {
+          const query = params.get(key)
+          const currentConfig = newConfig[key as keyof typeof newConfig]
+          const newChange = {
+            state: query === '1',
+          }
+          if (currentConfig?.editable) {
+            const editableValue =
+              params.get(`custom_${key}`) || params.get(`${key}Editable`)
+            if (editableValue != null) {
+              Object.assign(newChange, {
+                value: editableValue,
+              })
             }
-          })
-          setConfig({ ...config, ...newConfig })
+          }
+
+          Object.assign(
+            newConfig[key as keyof typeof newConfig] ?? {},
+            newChange
+          )
+        } else if (key in RequiredConfigsKeys) {
+          const query = params.get(key)
+          if (query != null) {
+            const newChange = {
+              [key]: query,
+            }
+
+            Object.assign(newConfig, newChange)
+          }
         }
-      }
+      })
+      setConfig({ ...config, ...newConfig })
     }
 
-    router.events.on('routeChangeComplete', handleRouteChange)
-    handleRouteChange(router.asPath)
+    handleRouteChange(searchParamsString)
+  }, [searchParamsString])
 
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (!repository) {
-    return null
-  }
+  if (!repository) return null
 
   return (
-    <div>
-      <Row align="middle">
-        <Col span={20} offset={4}>
-          <Form>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <SelectWrapper
-                title="Theme"
-                keyName="theme"
-                map={Object.keys(Theme).map((key) => ({
-                  key,
-                  label: (Theme as any)[key]
-                }))}
-                value={config.theme}
-                defaultValue={Theme.light}
-                handleChange={handleChange}
-              />
-              <SelectWrapper
-                title="Font"
-                keyName="font"
-                map={Object.keys(Font).map((key) => ({
-                  key,
-                  label: (Font as any)[key]
-                }))}
-                value={config.font}
-                defaultValue={Font.inter}
-                handleChange={handleChange}
-              />
-              <SelectWrapper
-                title="Background Pattern"
-                keyName="pattern"
-                map={Object.keys(Pattern).map((key) => ({
-                  key,
-                  label: (Pattern as any)[key]
-                }))}
-                value={config.pattern}
-                defaultValue={Pattern.plus}
-                handleChange={handleChange}
-              />
-              <Row>
-                <InputWrapper
-                  title="Logo"
-                  keyName="logo"
-                  placeholder="Enter logo url"
-                  value={config.logo}
-                  handleChange={handleChange}
-                />
-              </Row>
-              <Row gutter={[24, 24]}>
-                <CheckBoxWrapper
-                  title="Owner"
-                  keyName="owner"
-                  checked={config.owner?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Name"
-                  keyName="name"
-                  checked={config.name?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Language"
-                  keyName="language"
-                  checked={config.language?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Stars"
-                  keyName="stargazers"
-                  checked={config.stargazers?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Forks"
-                  keyName="forks"
-                  checked={config.forks?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Issues"
-                  keyName="issues"
-                  checked={config.issues?.state}
-                  handleChange={handleChange}
-                />
-                <CheckBoxWrapper
-                  title="Pull Requests"
-                  keyName="pulls"
-                  checked={config.pulls?.state}
-                  handleChange={handleChange}
-                />
-              </Row>
-              <Row>
-                <div className="text-area-wrapper">
-                  <CheckBoxWrapper
-                    title="Description"
-                    keyName="description"
-                    checked={config.description?.state}
-                    handleChange={handleChange}
-                  />
-                  <TextAreaWrapper
-                    keyName="description"
-                    value={config.description?.value || ''}
-                    defaultValue={repository.description || ''}
-                    handleChange={handleChange}
-                    disabled={!config.description?.state}
-                  />
-                </div>
-              </Row>
-            </Space>
-          </Form>
-        </Col>
-      </Row>
+    <div className="card w-96 max-w-[90vw] bg-neutral text-primary-content shadow-xl">
+      <div className="card-body">
+        <SelectWrapper
+          title="Theme"
+          keyName="theme"
+          map={Object.keys(Theme).map((key) => ({
+            key,
+            label: (Theme as any)[key],
+          }))}
+          value={config.theme}
+          handleChange={handleConfigChange}
+        />
+        <SelectWrapper
+          title="Font"
+          keyName="font"
+          map={Object.keys(Font).map((key) => ({
+            key,
+            label: (Font as any)[key],
+          }))}
+          value={config.font}
+          handleChange={handleConfigChange}
+        />
+        <SelectWrapper
+          title="Background Pattern"
+          keyName="pattern"
+          map={Object.keys(Pattern).map((key) => ({
+            key,
+            label: (Pattern as any)[key],
+          }))}
+          value={config.pattern}
+          handleChange={handleConfigChange}
+        />
+        <LogoInput
+          title="SVG Logo"
+          alt="Image url or data uri"
+          keyName="logo"
+          placeholder="Optional"
+          value={config.logo}
+          handleChange={handleConfigChange}
+        />
 
-      <style jsx>{`
-        .text-area-wrapper {
-          display: flex;
-          align-items: center;
-          width: 100%;
-        }
-      `}</style>
+        <div className="columns-2">
+          <CheckBoxWrapper
+            title="Name"
+            keyName="name"
+            checked={config.name?.state}
+            handleChange={handleConfigChange}
+            disabled
+          />
+          <CheckBoxWrapper
+            title="Owner"
+            keyName="owner"
+            checked={config.owner?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Language"
+            keyName="language"
+            checked={config.language?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Stars"
+            keyName="stargazers"
+            checked={config.stargazers?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Forks"
+            keyName="forks"
+            checked={config.forks?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Issues"
+            keyName="issues"
+            checked={config.issues?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Pull Requests"
+            keyName="pulls"
+            checked={config.pulls?.state}
+            handleChange={handleConfigChange}
+          />
+          <CheckBoxWrapper
+            title="Description"
+            keyName="description"
+            checked={config.description?.state}
+            handleChange={handleConfigChange}
+          />
+        </div>
+
+        {config.description?.state && (
+          <TextAreaWrapper
+            title="Description"
+            keyName="description"
+            value={config.description?.value}
+            handleChange={handleConfigChange}
+            disabled={!config.description?.state}
+          />
+        )}
+      </div>
     </div>
   )
 }
-
-export default Config

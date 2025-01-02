@@ -1,7 +1,7 @@
-/* eslint-disable no-unused-vars */
 enum Theme {
   light = 'Light',
-  dark = 'Dark'
+  dark = 'Dark',
+  auto = 'Auto',
 }
 
 enum Pattern {
@@ -14,7 +14,8 @@ enum Pattern {
   brickWall = 'Brick Wall',
   floatingCogs = 'Floating Cogs',
   diagonalStripes = 'Diagonal Stripes',
-  solid = 'Solid'
+  solid = 'Solid',
+  transparent = 'Transparent',
 }
 
 enum Font {
@@ -23,7 +24,8 @@ enum Font {
   raleway = 'Raleway',
   rokkitt = 'Rokkitt',
   sourceCodePro = 'Source Code Pro',
-  koho = 'KoHo'
+  koHo = 'KoHo',
+  jost = 'Jost',
 }
 
 export type RequiredConfigs = {
@@ -38,26 +40,26 @@ const OptionalConfigKeyStrings = {
   owner: true,
   name: true,
   description: true,
-  language: true
+  language: true,
 }
 
 const OptionalConfigKeyNumbers = {
   stargazers: true,
   forks: true,
   issues: true,
-  pulls: true
+  pulls: true,
 }
 
 export const RequiredConfigsKeys = {
   logo: true,
   font: true,
   theme: true,
-  pattern: true
+  pattern: true,
 }
 
 export const OptionalConfigsKeys = {
   ...OptionalConfigKeyStrings,
-  ...OptionalConfigKeyNumbers
+  ...OptionalConfigKeyNumbers,
 }
 
 type OptionalConfigStringElement = {
