@@ -1,14 +1,10 @@
-import React from 'react'
-import { Col, Checkbox, Typography } from 'antd'
-
-import ConfigType from '../../../common/types/configType'
-
-const { Text } = Typography
+import type ConfigType from '@/common/types/configType'
 
 type CheckBoxProps = {
   title: string
   keyName: keyof ConfigType
   checked?: boolean
+  disabled?: boolean
 
   handleChange: (value: any, key: keyof ConfigType) => void
 }
@@ -17,18 +13,34 @@ const CheckBoxWrapper = ({
   title,
   keyName,
   checked,
-  handleChange
+  disabled,
+  handleChange,
 }: CheckBoxProps) => {
   return (
-    <Col span={12}>
-      <Checkbox
-        checked={!!checked}
-        onChange={(e) => {
-          handleChange({ state: e.target.checked }, keyName)
-        }}>
-        <Text strong>{title}</Text>
-      </Checkbox>
-    </Col>
+    <div className="form-control">
+      <label
+        className="label cursor-pointer justify-start gap-2"
+        htmlFor={keyName}
+      >
+        <input
+          id={keyName}
+          name={keyName}
+          className="checkbox checkbox-sm bg-base-100"
+          type="checkbox"
+          checked={!!checked}
+          disabled={disabled}
+          onChange={(e) => {
+            handleChange({ state: e.target.checked }, keyName)
+          }}
+          aria-disabled={disabled}
+          aria-checked={!!checked}
+          aria-labelledby={`${keyName}-title`}
+        />
+        <span className="label-text font-semibold" id={`${keyName}-title`}>
+          {title}
+        </span>
+      </label>
+    </div>
   )
 }
 

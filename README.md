@@ -4,7 +4,7 @@ Want your project to stand out? **Socialify** helps you showcase your project to
 
 It includes a ton of options including custom logo, description, badges, and many fonts and background patterns to choose from.
 
-Join [![thousands of repositories](https://badgen.net/runkit/socialify-usage-count-q4as5tpoidq4?style=flat&label=)](https://github.com/search?o=desc&q=%22socialify.git.ci%22&s=indexed&type=Code) today!
+Join [![thousands of repositories](https://socialify.git.ci/api/stats.svg)](https://github.com/search?o=desc&q=%22socialify.git.ci%22&s=indexed&type=Code) today!
 
 ## Usage
 
@@ -37,8 +37,8 @@ You can use cli tool [mheap/github-social-image](https://github.com/mheap/github
     <img width="410" alt="Class Photo Example" src="https://socialify.git.ci/MLH-Fellowship/class-photo/image?font=Inter&logo=https%3A%2F%2Favatars0.githubusercontent.com%2Fu%2F65834464%3Fs%3D200%26v%3D4&owner=1&pattern=Diagonal%20Stripes&stargazers=0&theme=Dark" />
   </a>
 
-  <a href="https://socialify.git.ci/modfy/modfy.video?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fmodfy.video%2Fimages%2Flogo.png&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Dark">
-    <img width="410" alt="Modfy Example" src="https://socialify.git.ci/modfy/modfy.video/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fmodfy.video%2Fimages%2Flogo.png&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Dark" />
+  <a href="https://socialify.git.ci/modfy/videotranscode.space?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fuser-images.githubusercontent.com%2F5880908%2F199906693-240ebfdf-5981-4018-a5ce-3dacd3a44536.png&pattern=Plus&pulls=1&stargazers=1&theme=Dark">
+    <img width="410" alt="Modfy Example" src="https://socialify.git.ci/modfy/videotranscode.space/image?description=1&forks=1&issues=1&language=1&logo=https%3A%2F%2Fuser-images.githubusercontent.com%2F5880908%2F199906693-240ebfdf-5981-4018-a5ce-3dacd3a44536.png&pattern=Plus&pulls=1&stargazers=1&theme=Dark" />
   </a>
 
   <a href="https://socialify.git.ci/wei/pull?description=1&font=Source%20Code%20Pro&forks=1&language=1&logo=https%3A%2F%2Fgist.githack.com%2Fwei%2F40d98877c6ac5f917d78ccfe72a0f928%2Fraw%2Fpull-18h.svg&pattern=Floating%20Cogs&stargazers=1&owner=1&theme=Light">
@@ -54,23 +54,74 @@ You can use cli tool [mheap/github-social-image](https://github.com/mheap/github
   </a>
 </p>
 
-## Development
+## Contributing
 
-- Create a GitHub token from `Settings > Developer settings > Personal access tokens`, you'll need it in when setting up environemnt variables.
-- You'll need the `repo` scope
-- Run the following commands to set up the Development server:
+Please read and agree to our [Contributor Covenant Code of Conduct](https://github.com/wei/socialify/blob/master/CONTRIBUTING.md) to get started.
 
-  ```shell
-  # Clone
-  git clone https://github.com/wei/socialify.git && cd $_
+### Running Socialify Locally
 
-  # Set environment variables in .env
-  cp .env.example .env
+Run the following commands to get Socialify running locally:
 
-  yarn install
-  yarn build
-  yarn dev
-  ```
+```shell
+# Clone your fork of wei/socialify if contributing
+git clone https://github.com/wei/socialify.git && cd $_
+
+# Set environment variables in .env.
+cp .env.example .env
+
+# Install dependencies
+pnpm install
+
+# Start local development server
+pnpm dev
+```
+
+### Testing and Committing
+
+[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Containers&message=Click%20to%20Launch&color=blue)](https://open.vscode.dev/wei/socialify)
+
+If you already have VS Code and Docker installed locally, you can also click [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/wei/socialify) to get started. Clicking this link will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
+
+Socialify uses [`biomejs`](https://biomejs.dev/) as linter/formatter, [`Jest`](https://jestjs.io/) for unit testing, and [`Playwright`](https://playwright.dev/) for end-to-end testing.
+
+Make sure to run and pass the linter, unit and end-to-end tests locally before committing your code. Please let us know in case you need to update the test snapshots. More in `"scripts"` section in your `package.json` file.
+
+```shell
+# Required: Set environment variables in .env.
+cp .env.example .env
+
+# Run linter/formatter
+pnpm lint
+
+# Fix linter/formatter errors
+# pnpm lint:fix
+
+# Run unit tests
+pnpm test:unit
+
+# Install Playwright dependencies (first-time)
+# pnpm playwright:install
+
+# Run e2e tests
+pnpm test:e2e
+```
+
+**One** changeset file is required per each PR.
+
+  1. Run `pnpm changeset` and select the appropriate senmantic versioning type (major, minor, patch) based on the scope of the change, together with an concise message.
+  2. You will see a new markdown file with a silly name like `milk-honey-eggs.md` in the `.changeset` directory.
+  3. Test, commit, and push your code **WITH** this changeset file when submitting a new PR.
+  4. You can manually edit it to include more information. For example:
+
+      ```markdown
+      ---
+      "socialify": minor
+      ---
+
+      Added playwright e2e testing to capture user stories and main UI
+      ```
+
+That's it! We are tremendously grateful for your contribution to Socialify! :heart:
 
 ## Authors
 
@@ -79,11 +130,25 @@ You can use cli tool [mheap/github-social-image](https://github.com/mheap/github
 
 _Part of [@MLH-Fellowship](https://github.com/MLH-Fellowship) Pod 1.0.6_
 
+## Community
+
+These are the heros who continue to make Socialify the best social preview generator for the community.
+
+<a href="https://github.com/wei/socialify/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=wei/socialify" />
+</a>
+
 ## License
 
 - [MIT](https://wei.mit-license.org)
 
-## SLA
+## Hosting
+
+<a href="https://www.netlify.com">
+  <img width="114" height="50" alt="Deploys by Netlify" src="https://www.netlify.com/v3/img/components/netlify-dark.svg" />
+</a>
+
+### SLA
 
 Socialify is under active development. Design and project domain are subject to change without notice.
 
